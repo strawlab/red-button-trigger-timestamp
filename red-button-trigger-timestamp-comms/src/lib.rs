@@ -16,12 +16,12 @@ extern crate core as std;
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
 #[cfg_attr(feature = "print-defmt", derive(defmt::Format))]
 pub enum FromDevice {
-    Pong(u64, u64),
+    Pong(u64),
     Trigger(u64),
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
 #[cfg_attr(feature = "print-defmt", derive(defmt::Format))]
 pub enum ToDevice {
-    Ping(u64),
+    Ping,
 }

@@ -44,9 +44,9 @@ mod app {
     #[local]
     struct Local {
         trigger_pin: hal::gpio::Pin<
-            hal::gpio::bank0::Gpio15,
+            hal::gpio::bank0::Gpio13,
             hal::gpio::FunctionSioInput,
-            hal::gpio::PullUp, // TODO: pullup?
+            hal::gpio::PullUp,
         >,
         usb_dev: UsbDevice<'static, UsbBus>,
         rx_prod: Producer<'static, UsbFrame, NUM_FRAMES>,
@@ -98,7 +98,7 @@ mod app {
         let mut green_led = pins.led.reconfigure();
         green_led.set_low().unwrap();
 
-        let trigger_pin = pins.gpio15.reconfigure();
+        let trigger_pin = pins.gpio13.reconfigure();
 
         let rx_queue: &'static mut Queue<UsbFrame, NUM_FRAMES> = {
             static mut Q: Queue<UsbFrame, NUM_FRAMES> = Queue::new();
@@ -131,7 +131,7 @@ mod app {
         let encoded = json_lines::to_slice_newline(&response, &mut out_buf[..]).unwrap();
 
         ctx.shared.usb_serial.lock(|usb_serial| {
-            match usb_serial.write(&encoded) {
+            match usb_serial.write(encoded) {
                 // this can panic with WouldBlock
                 Ok(_nbytes) => {
                     // Should we check if nbytes == encoded.len()?
@@ -156,7 +156,7 @@ mod app {
         loop {
             let this_state = ctx.local.trigger_pin.is_high().unwrap();
             if this_state != prev_state {
-                if this_state == false {
+                if !this_state {
                     let now = monotonics::Monotonic::now().ticks();
                     let response = FromDevice::Trigger(now);
                     send_response(&response, &mut ctx, &mut out_buf);
@@ -188,9 +188,9 @@ mod app {
                 let response;
                 defmt::info!("Request: {:?}", request);
                 match request {
-                    ToDevice::Ping(val) => {
+                    ToDevice::Ping => {
                         let now = monotonics::Monotonic::now().ticks();
-                        response = FromDevice::Pong(val, now);
+                        response = FromDevice::Pong(now);
                         defmt::debug!("device state set");
                     }
                 }
