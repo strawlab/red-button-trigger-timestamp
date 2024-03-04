@@ -46,7 +46,7 @@ mod app {
         trigger_pin: hal::gpio::Pin<
             hal::gpio::bank0::Gpio15,
             hal::gpio::FunctionSioInput,
-            hal::gpio::PullNone, // TODO: pullup?
+            hal::gpio::PullUp, // TODO: pullup?
         >,
         usb_dev: UsbDevice<'static, UsbBus>,
         rx_prod: Producer<'static, UsbFrame, NUM_FRAMES>,
@@ -131,7 +131,18 @@ mod app {
         let encoded = json_lines::to_slice_newline(&response, &mut out_buf[..]).unwrap();
 
         ctx.shared.usb_serial.lock(|usb_serial| {
-            usb_serial.write(&encoded).unwrap();
+            match usb_serial.write(&encoded) {
+                // this can panic with WouldBlock
+                Ok(_nbytes) => {
+                    // Should we check if nbytes == encoded.len()?
+                }
+                Err(UsbError::WouldBlock) => {
+                    defmt::error!("failed to send message: WouldBlock");
+                }
+                Err(e) => {
+                    panic!("Writing message to USB: {e:?}");
+                }
+            }
         });
         defmt::trace!("sent {} bytes", encoded.len());
     }
@@ -149,6 +160,7 @@ mod app {
                     let now = monotonics::Monotonic::now().ticks();
                     let response = FromDevice::Trigger(now);
                     send_response(&response, &mut ctx, &mut out_buf);
+                    defmt::info!("Trigger: {}", now);
                 }
                 prev_state = this_state;
             }
@@ -172,15 +184,17 @@ mod app {
                 FeedResult::Success { data, remaining: _ } => Some(data),
             };
 
-            if let Some(msg) = ret {
+            if let Some(request) = ret {
                 let response;
-                match msg {
+                defmt::info!("Request: {:?}", request);
+                match request {
                     ToDevice::Ping(val) => {
                         let now = monotonics::Monotonic::now().ticks();
                         response = FromDevice::Pong(val, now);
                         defmt::debug!("device state set");
                     }
                 }
+                defmt::info!("Response: {:?}", response);
                 send_response(&response, &mut ctx, &mut out_buf);
             }
         }

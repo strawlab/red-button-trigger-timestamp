@@ -1,0 +1,5 @@
+[workspace]
+resolver = "2"
+members = ["red-button-trigger-timestamp", "red-button-trigger-timestamp-comms"]
+
+exclude = ["firmware"]
