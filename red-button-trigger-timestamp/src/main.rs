@@ -123,6 +123,7 @@ async fn main() -> anyhow::Result<()> {
                                 epoch_nanos_utc,
                             };
                             csv_wtr.serialize(trig_row)?;
+                            csv_wtr.flush()?;
                         } else {
                             tracing::error!("Could not compute trigger time.");
                         }
