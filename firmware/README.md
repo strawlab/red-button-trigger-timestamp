@@ -19,7 +19,7 @@ elf2uf2-rs target/thumbv6m-none-eabi/release/red-button-trigger-timestamp-firmwa
 
 You should now have the file `red-button-trigger-timestamp-firmware.uf2` in the
 `target/thumbv6m-none-eabi/release` directory. This is the firmware file which
-you should flash to your disk.
+you should flash to your pico.
 
 ### Install firmware
 
