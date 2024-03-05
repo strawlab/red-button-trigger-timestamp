@@ -1,0 +1,6 @@
+v01:
+* base plate too thin
+* base to board gap too narrow, thick gnd wire doesn't fit
+* holes for pico too shallow, inserts don't fit
+* it is very tricky to screw on the connector and then solder it, ground is inaccessible
+* the hole for bnc connector is too narrow, probably thanks to a droopy bridge. Requires a bit of grinding.
