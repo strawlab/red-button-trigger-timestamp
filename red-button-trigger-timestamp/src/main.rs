@@ -132,6 +132,7 @@ async fn main() -> anyhow::Result<()> {
                         if info != my_info {
                             anyhow::bail!("firmware has version {:?}, but program has version {:?}", info,my_info);
                         }
+                        tracing::info!("Connected to firmware \"{}\" v{}", String::from_utf8_lossy(&info.name), info.version);
                         did_receive_version_response = true;
                     }
                 }
