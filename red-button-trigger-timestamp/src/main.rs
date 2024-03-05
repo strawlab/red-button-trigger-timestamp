@@ -2,7 +2,7 @@ use clap::Parser;
 use color_eyre::eyre::{self as anyhow, WrapErr};
 use futures::{SinkExt, StreamExt};
 use json_lines::codec::JsonLinesCodec;
-use red_button_trigger_timestamp_comms::{FromDevice, ToDevice};
+use red_button_trigger_timestamp_comms::{FromDevice, ToDevice, VersionResponse};
 use serde::Serialize;
 use tokio_serial::SerialPortBuilderExt;
 use tracing_subscriber::{fmt, layer::SubscriberExt};
@@ -11,8 +11,8 @@ mod clock_model;
 
 #[derive(Serialize)]
 struct TriggerRow {
-    trigger_utc: chrono::DateTime<chrono::Utc>,
-    epoch_nanos: i64,
+    timestamp_local: chrono::DateTime<chrono::Local>,
+    epoch_nanos_utc: i64,
 }
 
 #[derive(Parser)]
@@ -92,9 +92,12 @@ async fn main() -> anyhow::Result<()> {
 
     let (mut device_tx, mut device_rx) = framed.split();
 
+    device_tx.send(ToDevice::VersionRequest).await?;
+    let version_request_sent = std::time::Instant::now();
+    let mut did_receive_version_response = false;
+
     let mut last_ping = chrono::Utc::now();
     let mut last_pong = chrono::Utc::now();
-    device_tx.send(ToDevice::Ping).await?;
 
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
     let mut clock_model = clock_model::ClockModel::default();
@@ -110,17 +113,26 @@ async fn main() -> anyhow::Result<()> {
                     }
                     FromDevice::Trigger(device_timestamp) => {
                         if let Some(trigger_utc) = clock_model.compute_utc(device_timestamp) {
-                            tracing::info!("trigger_utc: {}", trigger_utc);
+                            let timestamp_local: chrono::DateTime<chrono::Local> =
+                            trigger_utc.with_timezone(&chrono::Local);
+                            tracing::info!("trigger: {}", timestamp_local);
                             let delta_epoch = trigger_utc - chrono::DateTime::UNIX_EPOCH;
-                            let epoch_nanos = delta_epoch.num_nanoseconds().unwrap();
+                            let epoch_nanos_utc = delta_epoch.num_nanoseconds().unwrap();
                             let trig_row = TriggerRow {
-                                trigger_utc,
-                                epoch_nanos,
+                                timestamp_local,
+                                epoch_nanos_utc,
                             };
                             csv_wtr.serialize(trig_row)?;
                         } else {
                             tracing::error!("Could not compute trigger time.");
                         }
+                    }
+                    FromDevice::VersionResponse(info) => {
+                        let my_info = VersionResponse::default();
+                        if info != my_info {
+                            anyhow::bail!("firmware has version {:?}, but program has version {:?}", info,my_info);
+                        }
+                        did_receive_version_response = true;
                     }
                 }
             }
@@ -132,6 +144,12 @@ async fn main() -> anyhow::Result<()> {
                     tracing::error!("No communication with device in {} seconds.", delta.num_milliseconds()as f64/1000.0);
                 }
             }
+        }
+
+        if !did_receive_version_response
+            && version_request_sent.elapsed() > std::time::Duration::from_secs(5)
+        {
+            anyhow::bail!("No version response received.");
         }
     }
 }

@@ -193,6 +193,9 @@ mod app {
                         response = FromDevice::Pong(now);
                         defmt::debug!("device state set");
                     }
+                    ToDevice::VersionRequest => {
+                        response = FromDevice::VersionResponse(Default::default());
+                    }
                 }
                 defmt::info!("Response: {:?}", response);
                 send_response(&response, &mut ctx, &mut out_buf);

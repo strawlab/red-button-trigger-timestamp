@@ -2,26 +2,38 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "collections")]
-extern crate collections;
+pub const COMMS_NAME: &[u8; 11] = b"triggertime";
+pub const COMM_VERSION: u16 = 1;
 
-#[macro_use]
-extern crate serde_derive;
-extern crate serde;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "print-defmt", derive(defmt::Format))]
+pub struct VersionResponse {
+    pub name: [u8; 11],
+    pub version: u16,
+}
 
-#[cfg(not(feature = "std"))]
-extern crate core as std;
+impl Default for VersionResponse {
+    fn default() -> Self {
+        Self {
+            name: *COMMS_NAME,
+            version: COMM_VERSION,
+        }
+    }
+}
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "print-defmt", derive(defmt::Format))]
 pub enum FromDevice {
     Pong(u64),
     Trigger(u64),
+    VersionResponse(VersionResponse),
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "print-defmt", derive(defmt::Format))]
 pub enum ToDevice {
     Ping,
+    VersionRequest,
 }
