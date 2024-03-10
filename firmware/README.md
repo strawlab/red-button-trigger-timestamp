@@ -31,7 +31,7 @@ into your machine. It should appear as a flash drive. Copy the
 
 We use the Knurling project to facilitate debugging. `probe-rs` can be used to
 debug the device from a host computer and view log messages send using the
-`defmt` infrastructure. Install `probe-run` with `cargo install probe-run --locked`.
+`defmt` infrastructure. Install `probe-rs` with `cargo install probe-rs --features cli`.
 
 To see `defmt` messages, compile with the `DEFMT_LOG` environment variable
 set appropriately. (By default, `defmt` will show only error level messages.)
