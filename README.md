@@ -3,8 +3,9 @@
 ![photo](hardware/photo.jpg)
 
 This device allows using a Raspberry Pi Pico board to capture accurate timing
-information at the time an external trigger fired. We use it to log when exactly
-our high speed cameras were triggered.
+information at the time an external trigger fired. We use it with
+[FLO](https://github.com/strawlab/flo) to log when exactly our high speed
+cameras were triggered.
 
 Directories:
 

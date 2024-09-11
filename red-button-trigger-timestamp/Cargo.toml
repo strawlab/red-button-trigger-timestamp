@@ -2,6 +2,8 @@
 name = "red-button-trigger-timestamp"
 version = "0.1.0"
 edition = "2021"
+description = "allows using a Raspberry Pi Pico board to capture accurate timing information"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 tracing = "0.1"
